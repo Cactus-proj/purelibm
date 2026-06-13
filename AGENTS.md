@@ -2,19 +2,23 @@
 
 ## 项目结构与模块组织
 
-本仓库目前处于早期设计阶段。当前已跟踪的项目文件包括：
+本仓库目前处于 M1 基础设施阶段。当前项目文件包括：
 
 - `README.md`：项目简介和许可证说明。
 - `DESIGN.md`：架构、验证等级、浮点语义和路线图的主要依据。
-- `docs/`：预留给 ADR、函数规格、oracle 差异、参考文献和翻译记录。
+- `src/`：公开头文件和共享 C helper。
+- `tests/`：CTest 测试、MPFR smoke test 和穷举 harness 骨架。
+- `deps/core-math/`：CORE-MATH submodule，作为一致性 oracle 的基础。
+- `docs/`：ADR、函数规格、oracle 差异、参考文献和翻译记录。
 
-新增实现文件时，遵循 `DESIGN.md` 中规划的布局：公开头文件放在 `src/`，共享 helper 放在 `src/utils/`，单精度实现放在 `src/math/binary32/`，双精度实现放在 `src/math/binary64/`，系数生成脚本放在 `coeff/`，测试放在 `tests/`，CORE-MATH 作为 `deps/core-math/` 引入。
+新增实现文件时，遵循 `DESIGN.md` 中规划的布局：公开头文件放在 `src/`，共享 helper 放在 `src/utils/`，单精度实现放在 `src/math/binary32/`，双精度实现放在 `src/math/binary64/`，系数生成脚本放在 `coeff/`，测试放在 `tests/`。
 
 ## 构建、测试与开发命令
 
-仓库尚未提交构建系统。开始实现后，优先采用 `DESIGN.md` 中描述的 CMake 流程：
+本仓库使用 CMake、Ninja 和 CTest：
 
-- `cmake -S . -B build`：配置本地构建目录。
+- `git submodule update --init --recursive`：初始化 CORE-MATH submodule。
+- `cmake -S . -B build -G Ninja -DPURELIBM_REQUIRE_MPFR=ON -DPURELIBM_REQUIRE_CORE_MATH=ON`：配置本地构建目录并强制检查 MPFR / CORE-MATH。
 - `cmake --build build`：编译库和测试。
 - `ctest --test-dir build`：运行已配置的测试套件。
 
