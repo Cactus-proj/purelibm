@@ -22,7 +22,7 @@
 
 ## 代码风格与命名约定
 
-参考实现使用 C11。避免 GNU C 扩展和仅 C23 支持的特性。公开 API 使用 `cr_` 前缀，例如 `cr_sinf`；内部 helper 使用 `ieee754_` 或 `purelibm_` 前缀。
+参考实现使用 C，API 合同以 C23 数学库语义为准。避免 GNU C 扩展；除非 M1 构建合同明确需要，不引入无关的 C23 语法特性。公开 API 使用 `cr_` 前缀，例如 `cr_sinf`；内部 helper 使用 `ieee754_` 或 `purelibm_` 前缀。
 
 优先写清晰、带文档说明的数学代码，避免不透明的位技巧。需要表达 FMA 语义时，使用 `<math.h>` 中的 `fmaf()` 和 `fma()`。IEEE 754 位级操作集中放在 `src/utils/ieee754.h`，并使用基于 `memcpy` 的转换，避免类型双关。
 
@@ -30,7 +30,7 @@
 
 测试要求以 `DESIGN.md` 为准：L0 包括编译器警告和静态检查，L1 包括 MPFR 与 CORE-MATH oracle 测试，更深入的验证可选用 CBMC、Frama-C、Sollya 或 Gappa。
 
-按函数命名聚焦测试，例如 `tests/test_sinf.c`；高成本穷举测试应在文件名中体现，例如 `tests/test_exhaust_sinf.c`。每个函数都应记录特殊值行为、signed zero 处理、NaN 策略、subnormal 处理、oracle 来源和采样策略。
+按函数命名聚焦测试，例如 `tests/test_sinf.c`；高成本穷举测试应在文件名中体现，例如 `tests/test_exhaust_sinf.c`。每个函数都应记录对应 C23 语义、特殊值行为、signed zero 处理、NaN 策略、subnormal 处理、oracle 来源和采样策略。
 
 ## 提交与 Pull Request 指南
 

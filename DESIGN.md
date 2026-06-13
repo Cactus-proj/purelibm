@@ -109,8 +109,8 @@ Rust 的类型安全和验证工具仍然有价值，但不是主实现的首选
 
 ### 2.4 Oracle 分层
 
-1. **正确性 oracle**：MPFR 高精度参考。一元 f32 全域穷举对比；多元 f32 按函数规格做分层测试；f64 采样对比。
-2. **一致性 oracle**：CORE-MATH 源码直接纳入测试。若 CORE-MATH 和 MPFR 结果冲突，以 MPFR 为准，记录差异并反馈上游。
+1. **正确性 oracle**：C23 数学库语义 + MPFR 高精度参考。一元 f32 全域穷举对比；多元 f32 按函数规格做分层测试；f64 采样对比。
+2. **一致性 oracle**：CORE-MATH 源码直接纳入测试。若 CORE-MATH 和 C23 语义 / MPFR 结果冲突，以 C23 语义和 MPFR 为准，记录差异并反馈上游。
 
 ---
 
@@ -217,13 +217,13 @@ static inline uint32_t ieee754_extract_mantissa_f32(float x) {
 
 | 问题 | 决策 |
 |------|------|
-| 主实现语言 | **C11**（禁用 GNU C 扩展，不使用 C23 特性） |
-| 标准依赖 | `<math.h>` (C99) 的 `fmaf`/`fma` 替代 `__builtin_fma` |
-| fenv/errno | API 合同只保证返回值，不保证 errno 或浮点异常标志 |
+| 主实现语言 | **C**（实现代码避免 GNU C 扩展；API 合同使用 C23 数学库语义） |
+| 标准依赖 | `<math.h>` 的 `fmaf`/`fma` 替代 `__builtin_fma` |
+| fenv/errno | API 合同只保证 C23 语义下的返回值，不保证 errno 或浮点异常标志 |
 | FMA 使用 | 使用 C99 `fmaf()` / `fma()` 表达 FMA 语义；不要求硬件 FMA |
 | 命名前缀 | 公开 API: `cr_` 前缀（`cr_sinf`）；内部 helper: `ieee754_` 或 `purelibm_` 前缀 |
 | 隐式类型提升 | 禁止无意提升。启用 `-Wdouble-promotion`；故意使用 `double` / double-double 时必须在函数文档中说明 |
-| C standard | C11；使用 `_Static_assert` 固化浮点表示前提，不使用 C23 特性 |
+| API standard | C23 数学库语义；每个函数规格必须记录对应 C23 行为和任何偏离 |
 
 ---
 
@@ -235,9 +235,10 @@ M0 的目标是在实现第一个函数前冻结“什么算通过”。正确�
 
 | 项目 | 决策 |
 |------|------|
+| API 合同 | 使用 C23 数学库语义作为特殊值、定义域、极点、溢出、下溢和返回值分类的基准 |
 | 目标语义 | IEEE 754 binary32 / binary64，默认 round-to-nearest-even |
 | 舍入模式 | 测试和发布构建均假设默认舍入模式；不支持运行时动态舍入模式 |
-| `errno` / fenv flags | API 只保证返回值，不保证 `errno`、异常标志或 `fetestexcept` 结果 |
+| `errno` / fenv flags | API 只保证 C23 语义下的返回值，不保证 `errno`、异常标志或 `fetestexcept` 结果 |
 | NaN | 正确性测试默认只要求结果为 NaN，不比较 payload；若函数需要保留 payload，必须在函数规格中单独声明 |
 | signed zero | bitwise 比较，`+0.0` 与 `-0.0` 视为不同结果 |
 | subnormal | 默认要求保留 subnormal 语义；禁止依赖 flush-to-zero / denormals-are-zero 模式 |
@@ -257,7 +258,7 @@ M0 的目标是在实现第一个函数前冻结“什么算通过”。正确�
 编译配置必须显式禁止会破坏上述语义的选项。M1 的 CI 至少包含一组“严格浮点”构建：
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wdouble-promotion \
+cc -std=c23 -Wall -Wextra -Wpedantic -Wconversion -Wdouble-promotion \
    -fno-fast-math -ffp-contract=off
 ```
 
@@ -277,6 +278,7 @@ M1 建立实现骨架时，所有 IEEE 754 编码层 helper 必须集中在 `src
 每个函数在实现前必须有一张规格表，至少覆盖：
 
 - 输入域和目标返回值语义
+- 对应 C23 数学库语义，以及任何项目内偏离
 - 特殊值：`+0.0`、`-0.0`、`+Inf`、`-Inf`、quiet NaN、signaling NaN、subnormal
 - 正常路径的目标舍入模式
 - 是否要求 bitwise 相等，还是只要求分类相等
@@ -288,11 +290,11 @@ Oracle 分层固定如下：
 
 | Oracle | 用途 | 决策权 |
 |--------|------|--------|
-| MPFR / 高精度生成器 | 正确性 oracle，生成目标舍入结果 | 最高 |
+| C23 语义 + MPFR / 高精度生成器 | 正确性 oracle，生成目标舍入结果 | 最高 |
 | CORE-MATH 固定 commit | 一致性 oracle，检查本项目没有偏离参考实现 | 次级 |
 | 手写特殊值表 | 补足 MPFR 不直接表达的 libm 返回值语义 | 与函数规格绑定 |
 
-若 CORE-MATH 与 MPFR / 规格表冲突，以规格表和 MPFR 为准；差异必须进入 `docs/oracle-differences.md`，并记录是否需要反馈上游。
+若 CORE-MATH 与 C23 语义、MPFR / 规格表冲突，以 C23 语义、规格表和 MPFR 为准；差异必须进入 `docs/oracle-differences.md`，并记录是否需要反馈上游。
 
 ### 4.4 测试范围合同
 
@@ -370,7 +372,7 @@ static const double CR_SINF_C1 = 0x1.921fb54442d17p-3;
 |---------------|--------------|
 | `__builtin_fma(x, y, z)` | `fmaf(x, y, z)` (C99 `<math.h>`) |
 | `__builtin_expect(cond, 0)` | 移除（不依赖分支预测提示） |
-| `__attribute__((aligned))` | C11 `_Alignas` 或移除 |
+| `__attribute__((aligned))` | 标准 C `alignas` / `_Alignas` 或移除 |
 | 无意的 `float` → `double` 提升 | 启用 `-Wdouble-promotion`；故意提升必须注释说明 |
 
 ### 6.3 引用文献

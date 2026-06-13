@@ -8,13 +8,15 @@
 - C 签名：`<return-type> cr_<name>(<args>);`
 - 目标格式：binary32 / binary64
 - 函数类型：一元 / 二元 / 多元
+- C23 对应函数 / 条款：
 - 参考来源：CORE-MATH 文件和固定 commit
 - 正确性 oracle：MPFR / 高精度生成器 / 手写特殊值表
 
 ## 语义合同
 
+- API 合同：遵循 C23 数学库语义 / 记录项目内偏离
 - 舍入模式：默认 round-to-nearest-even
-- `errno` / fenv：只保证返回值，不保证 `errno` 或浮点异常标志
+- `errno` / fenv：只保证 C23 语义下的返回值，不保证 `errno` 或浮点异常标志
 - 比较规则：bitwise 相等 / 分类相等 / 函数自定义规则
 - NaN 策略：只要求 NaN 分类 / 保留 payload / 保留符号位
 - signed zero：`+0.0` 与 `-0.0` 是否区分
@@ -55,11 +57,12 @@
 
 ## Oracle 冲突处理
 
-若 CORE-MATH 与 MPFR / 规格表不一致，以 MPFR / 规格表为准。将差异记录到 `docs/oracle-differences.md`，并说明是否需要反馈上游。
+若 CORE-MATH 与 C23 语义、MPFR / 规格表不一致，以 C23 语义、MPFR / 规格表为准。将差异记录到 `docs/oracle-differences.md`，并说明是否需要反馈上游。
 
 ## 验收 checklist
 
 - [ ] 特殊值表已填完整
+- [ ] C23 对应语义和任何偏离已记录
 - [ ] 比较规则已明确
 - [ ] oracle 来源和固定版本已记录
 - [ ] 测试策略、样本规模和随机种子已记录
