@@ -229,7 +229,7 @@ static inline uint32_t ieee754_extract_mantissa_f32(float x) {
 
 ## 4. M0：语义与验收合同
 
-M0 的目标是在实现第一个函数前冻结“什么算通过”。正确舍入数学库的失败常常不是算法错，而是编译器浮点语义、特殊值比较、位级 helper 或测试范围没有提前定义。M0 不产出函数覆盖率，只产出可执行合同。
+M0 的目标是在实现第一个函数前冻结“什么算通过”。正确舍入数学库的失败常常不是算法错，而是编译器浮点语义、特殊值比较、位级 helper 或测试范围没有提前定义。M0 不产出函数覆盖率，也不建立 C 工程骨架；它只产出后续实现必须遵守的文档合同。
 
 ### 4.1 浮点语义合同
 
@@ -244,7 +244,7 @@ M0 的目标是在实现第一个函数前冻结“什么算通过”。正确�
 | FMA | 需要单次舍入时必须显式使用 `fmaf()` / `fma()`；普通 `a * b + c` 不得依赖编译器自动收缩 |
 | 平台 | 起步支持常见 IEEE 754 平台；不承诺 x87 扩展精度、非 IEC 60559 `float`、或默认 FTZ/DAZ 平台 |
 
-第一批 CI 平台矩阵：
+第一批 CI 平台矩阵在 M1 建立，M0 先冻结目标平台角色：
 
 | 平台 | 编译器 | 角色 |
 |------|--------|------|
@@ -254,18 +254,18 @@ M0 的目标是在实现第一个函数前冻结“什么算通过”。正确�
 
 非主验收平台必须先记录浮点环境差异，再决定是否纳入 blocking CI。
 
-编译配置必须显式禁止会破坏上述语义的选项。CI 至少包含一组“严格浮点”构建：
+编译配置必须显式禁止会破坏上述语义的选项。M1 的 CI 至少包含一组“严格浮点”构建：
 
 ```sh
 cc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wdouble-promotion \
    -fno-fast-math -ffp-contract=off
 ```
 
-需要 FMA 语义的代码通过 `fmaf()` / `fma()` 表达，不通过 `-ffp-contract=fast` 或目标 CPU 特性表达。若某个编译器不支持上述 flag，`CMakeLists.txt` 必须记录等价替代或跳过原因。
+需要 FMA 语义的代码通过 `fmaf()` / `fma()` 表达，不通过 `-ffp-contract=fast` 或目标 CPU 特性表达。若某个编译器不支持上述 flag，M1 的 `CMakeLists.txt` 必须记录等价替代或跳过原因。
 
 ### 4.2 位级表示与 UB 合同
 
-所有 IEEE 754 编码层 helper 必须集中在 `src/utils/ieee754.h`，并遵守以下规则：
+M1 建立实现骨架时，所有 IEEE 754 编码层 helper 必须集中在 `src/utils/ieee754.h`，并遵守以下规则：
 
 1. `float` / `uint32_t`、`double` / `uint64_t` 之间的转换使用 `memcpy` helper，不使用指针类型双关。
 2. helper 顶部用 `_Static_assert` 检查 `sizeof(float) == 4`、`sizeof(double) == 8`、`CHAR_BIT == 8`。
@@ -304,7 +304,7 @@ Oracle 分层固定如下：
 | 二元/多元 f32 | 边界笛卡尔积 + 随机采样 + hard-to-round cases + 差异回归集 |
 | f64 | 随机采样 + 边界值 + hard-to-round cases；不承诺全域穷举 |
 
-每个函数的测试文件必须声明采用哪种策略、样本规模、随机种子策略和失败样例归档位置。CI 中每次提交运行快速 L0/L1 子集；全域穷举和大规模采样运行在 nightly/cron。
+每个函数的测试文件必须声明采用哪种策略、样本规模、随机种子策略和失败样例归档位置。M1 建立 CI 后，每次提交运行快速 L0/L1 子集；全域穷举和大规模采样运行在 nightly/cron。
 
 ### 4.5 M0 交付物
 
@@ -313,11 +313,8 @@ M0 完成的硬标准：
 1. `docs/adr/001-floating-semantics.md`：记录浮点语义、编译 flag、平台假设。
 2. `docs/function-spec-template.md`：单函数规格表模板。
 3. `docs/oracle-differences.md`：记录 oracle 冲突的格式。
-4. `src/utils/ieee754.h`：无 strict-aliasing UB 的位级 helper 原型。
-5. `tests/` 中有一个最小 oracle smoke test，覆盖 signed zero、NaN、Inf、subnormal。
-6. CI 至少有严格浮点构建和普通调试构建两条路径。
 
-只有 M0 通过后，才进入 M1 基础设施和 M2 pilot 函数。
+只有 M0 通过后，才进入 M1 基础设施。`src/utils/ieee754.h`、最小 oracle smoke test 和 CI 属于 M1 的交付物。
 
 ---
 
@@ -395,12 +392,12 @@ static const double CR_SINF_C1 = 0x1.921fb54442d17p-3;
 
 - 浮点语义合同、编译 flag、平台假设写入 ADR
 - 单函数规格表模板、oracle 差异记录格式完成
-- IEEE 754 helper 原型无 strict-aliasing UB
-- oracle smoke test 覆盖 signed zero、NaN、Inf、subnormal
 
 ### M1 — 基础设施就绪
 
 - C 项目骨架（目录结构、CMakeLists.txt、CI 配置）
+- IEEE 754 helper 原型无 strict-aliasing UB
+- oracle smoke test 覆盖 signed zero、NaN、Inf、subnormal
 - MPFR oracle 测试框架完成；CORE-MATH 以 git submodule 纳入，一致性测试框架完成
 - 穷举测试 harness 可用
 - `src/utils/` 基础工具（IEEE 754 helper、多项式求值、double-double 算术）
