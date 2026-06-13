@@ -9,6 +9,7 @@ project(
 
 include(CheckCCompilerFlag)
 include(CTest)
+find_package(PkgConfig QUIET)
 
 option(PURELIBM_REQUIRE_MPFR "Require MPFR for oracle tests" ON)
 option(PURELIBM_REQUIRE_CORE_MATH "Require deps/core-math to be present" OFF)
@@ -36,6 +37,14 @@ set(PURELIBM_STRICT_COMPILE_OPTIONS
   -fno-fast-math
   -ffp-contract=off
 )
+
+if(PkgConfig_FOUND)
+  pkg_check_modules(MPFR IMPORTED_TARGET mpfr)
+endif()
+
+if(PURELIBM_REQUIRE_MPFR AND NOT MPFR_FOUND)
+  message(FATAL_ERROR "MPFR is required. Install MPFR development files or set PURELIBM_REQUIRE_MPFR=OFF.")
+endif()
 
 function(purelibm_apply_options target)
   target_compile_options(${target} PRIVATE ${PURELIBM_STRICT_COMPILE_OPTIONS})
