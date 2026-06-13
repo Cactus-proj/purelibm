@@ -219,7 +219,6 @@ static inline uint32_t ieee754_extract_mantissa_f32(float x) {
 |------|------|
 | 主实现语言 | **C**（实现代码避免 GNU C 扩展；API 合同使用 C23 数学库语义） |
 | 标准依赖 | `<math.h>` 的 `fmaf`/`fma` 替代 `__builtin_fma` |
-| fenv/errno | API 合同只保证 C23 语义下的返回值，不保证 errno 或浮点异常标志 |
 | FMA 使用 | 使用 C99 `fmaf()` / `fma()` 表达 FMA 语义；不要求硬件 FMA |
 | 命名前缀 | 公开 API: `cr_` 前缀（`cr_sinf`）；内部 helper: `ieee754_` 或 `purelibm_` 前缀 |
 | 隐式类型提升 | 禁止无意提升。启用 `-Wdouble-promotion`；故意使用 `double` / double-double 时必须在函数文档中说明 |
@@ -238,7 +237,6 @@ M0 的目标是在实现第一个函数前冻结“什么算通过”。正确�
 | API 合同 | 使用 C23 数学库语义作为特殊值、定义域、极点、溢出、下溢和返回值分类的基准 |
 | 目标语义 | IEEE 754 binary32 / binary64，默认 round-to-nearest-even |
 | 舍入模式 | 测试和发布构建均假设默认舍入模式；不支持运行时动态舍入模式 |
-| `errno` / fenv flags | API 只保证 C23 语义下的返回值，不保证 `errno`、异常标志或 `fetestexcept` 结果 |
 | NaN | 正确性测试默认只要求结果为 NaN，不比较 payload；若函数需要保留 payload，必须在函数规格中单独声明 |
 | signed zero | bitwise 比较，`+0.0` 与 `-0.0` 视为不同结果 |
 | subnormal | 默认要求保留 subnormal 语义；禁止依赖 flush-to-zero / denormals-are-zero 模式 |
@@ -284,7 +282,7 @@ M1 建立实现骨架时，所有 IEEE 754 编码层 helper 必须集中在 `src
 - 是否要求 bitwise 相等，还是只要求分类相等
 - CORE-MATH 与 MPFR 结果冲突时的处理规则
 
-signaling NaN 只规定返回值分类或位模式；本项目不规定 `FE_INVALID` 等浮点异常标志是否被触发。
+signaling NaN 的返回值分类或位模式必须由函数规格单独声明。
 
 Oracle 分层固定如下：
 

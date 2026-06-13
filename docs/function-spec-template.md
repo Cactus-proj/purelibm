@@ -16,7 +16,6 @@
 
 - API 合同：遵循 C23 数学库语义 / 记录项目内偏离
 - 舍入模式：默认 round-to-nearest-even
-- `errno` / fenv：只保证 C23 语义下的返回值，不保证 `errno` 或浮点异常标志
 - 比较规则：bitwise 相等 / 分类相等 / 函数自定义规则
 - NaN 策略：只要求 NaN 分类 / 保留 payload / 保留符号位
 - signed zero：`+0.0` 与 `-0.0` 是否区分
@@ -31,7 +30,7 @@
 | `+Inf` | TBD | bitwise / classification |  |
 | `-Inf` | TBD | bitwise / classification |  |
 | quiet NaN | NaN | classification | 默认不比较 payload |
-| signaling NaN | NaN | classification | 不规定 `FE_INVALID` |
+| signaling NaN | NaN | classification | 按函数规格声明 |
 | subnormal | TBD | bitwise / classification |  |
 
 ## 算法与系数

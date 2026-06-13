@@ -14,7 +14,7 @@ API 合同使用 C23 数学库语义作为基准。每个 `cr_*` 函数的特殊
 
 目标浮点格式为 IEEE 754 binary32 / binary64，默认舍入模式为 round-to-nearest-even。本项目不支持运行时动态舍入模式。测试和发布构建都假设调用方未改变默认舍入模式。
 
-API 合同只保证 C23 语义下的返回值，不保证 `errno`、浮点异常标志或 `fetestexcept` 结果。signaling NaN 只规定返回值分类或位模式，不规定是否触发 `FE_INVALID`。
+signaling NaN 的返回值分类或位模式必须由函数规格单独声明。
 
 NaN 默认只要求结果分类为 NaN，不比较 payload。若某个函数需要保留 payload 或符号位，必须在该函数规格中单独声明。
 
