@@ -1,0 +1,3 @@
+[submodule "deps/core-math"]
+	path = deps/core-math
+	url = https://github.com/Cactus-proj/core-math.git

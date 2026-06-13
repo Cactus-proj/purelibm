@@ -13,6 +13,7 @@ find_package(PkgConfig QUIET)
 
 option(PURELIBM_REQUIRE_MPFR "Require MPFR for oracle tests" ON)
 option(PURELIBM_REQUIRE_CORE_MATH "Require deps/core-math to be present" OFF)
+set(PURELIBM_CORE_MATH_DIR "${PROJECT_SOURCE_DIR}/deps/core-math" CACHE PATH "Path to CORE-MATH source tree")
 
 check_c_compiler_flag("-std=c23" PURELIBM_HAS_STD_C23)
 if(PURELIBM_HAS_STD_C23)
@@ -44,6 +45,20 @@ endif()
 
 if(PURELIBM_REQUIRE_MPFR AND NOT MPFR_FOUND)
   message(FATAL_ERROR "MPFR is required. Install MPFR development files or set PURELIBM_REQUIRE_MPFR=OFF.")
+endif()
+
+if(EXISTS "${PURELIBM_CORE_MATH_DIR}/src")
+  set(PURELIBM_CORE_MATH_FOUND TRUE)
+else()
+  set(PURELIBM_CORE_MATH_FOUND FALSE)
+endif()
+
+if(PURELIBM_REQUIRE_CORE_MATH AND NOT PURELIBM_CORE_MATH_FOUND)
+  message(FATAL_ERROR "CORE-MATH is required. Initialize deps/core-math or set PURELIBM_CORE_MATH_DIR.")
+endif()
+
+if(PURELIBM_CORE_MATH_FOUND)
+  message(STATUS "Found CORE-MATH: ${PURELIBM_CORE_MATH_DIR}")
 endif()
 
 function(purelibm_apply_options target)
