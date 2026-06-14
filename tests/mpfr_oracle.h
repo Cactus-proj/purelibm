@@ -42,15 +42,15 @@ static inline void purelibm_mpfr_init(void) {
  *
  * Rounds the MPFR value v to f32 precision using the given rounding mode,
  * then calls mpfr_subnormalize to handle subnormal results.  The ternary
- * value is passed as 0 so MPFR determines the correct inexact / underflow
- * behaviour from context (same pattern as CORE-MATH).
+ * from mpfr_set is passed to mpfr_subnormalize so MPFR can determine the
+ * correct rounding direction at the subnormal / zero boundary.
  */
 
 static inline float purelibm_mpfr_to_f32(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 24);
-    mpfr_set(tmp, v, rnd);
-    (void)mpfr_subnormalize(tmp, 0, rnd);
+    int ternary = mpfr_set(tmp, v, rnd);
+    (void)mpfr_subnormalize(tmp, ternary, rnd);
     float result = mpfr_get_flt(tmp, MPFR_RNDN);
     mpfr_clear(tmp);
     return result;
@@ -59,8 +59,8 @@ static inline float purelibm_mpfr_to_f32(mpfr_t v, mpfr_rnd_t rnd) {
 static inline double purelibm_mpfr_to_f64(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 53);
-    mpfr_set(tmp, v, rnd);
-    (void)mpfr_subnormalize(tmp, 0, rnd);
+    int ternary = mpfr_set(tmp, v, rnd);
+    (void)mpfr_subnormalize(tmp, ternary, rnd);
     double result = mpfr_get_d(tmp, MPFR_RNDN);
     mpfr_clear(tmp);
     return result;
@@ -84,8 +84,8 @@ static inline float purelibm_mpfr_unary_f32(float x,
     mpfr_init2(y, 24);
     /* mpfr_set_flt at 24-bit precision is exact for any f32 input */
     mpfr_set_flt(y, x, MPFR_RNDN);
-    mpfr_func(y, y, rnd);
-    (void)mpfr_subnormalize(y, 0, rnd);
+    int ternary = mpfr_func(y, y, rnd);
+    (void)mpfr_subnormalize(y, ternary, rnd);
     float result = mpfr_get_flt(y, MPFR_RNDN);
     mpfr_clear(y);
     return result;
@@ -97,8 +97,8 @@ static inline double purelibm_mpfr_unary_f64(
     mpfr_init2(y, 53);
     /* mpfr_set_d at 53-bit precision is exact for any f64 input */
     mpfr_set_d(y, x, MPFR_RNDN);
-    mpfr_func(y, y, rnd);
-    (void)mpfr_subnormalize(y, 0, rnd);
+    int ternary = mpfr_func(y, y, rnd);
+    (void)mpfr_subnormalize(y, ternary, rnd);
     double result = mpfr_get_d(y, MPFR_RNDN);
     mpfr_clear(y);
     return result;
