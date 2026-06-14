@@ -1,0 +1,39 @@
+# PureLibm clang-tidy configuration
+#
+# DESIGN.md §2.1 L0 requires static analysis.  This file enables a
+# baseline set of checks that catch common C bugs without being
+# overly noisy for numerical code.
+#
+# Usage:
+#   clang-tidy -p build <file.c>
+#   clang-tidy -p build --config-file=.clang-tidy src/math/binary32/*.c
+
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-implicit-widening-of-multiplication-result,
+  misc-*,
+  -misc-include-cleaner,
+  -misc-const-correctness,
+  -misc-no-recursion,
+  performance-*,
+  -performance-unnecessary-value-param,
+  portability-*,
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-avoid-return-with-void-value,
+
+CheckOptions:
+  - key: readability-function-size.LineThreshold
+    value: 300
+  - key: bugprone-argument-comment.StrictMode
+    value: false
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: true
+
+# C-specific settings
+HeaderFilterRegex: 'src/.*\.h'
