@@ -22,20 +22,13 @@ display = hexadecimal;
 // 64-entry LUT: tr[j] ≈ 1/m for m in interval j, tl[j] = log(1/tr[j])
 // z = m*tr[j] - 1,  z in [-1/128, 1/128]
 // log(m) = log(1+z) + tl[j]
-//
-// b[] (fast path): degree-2 polynomial for (log(1+z) - z) / z^2
-//                  then log(1+z) = z + z^2 * (b[0] + z*b[1] + z^2*b[2])... no
-//                  Actually: log(1+z) ≈ z*b[0] + z^2*b[1] + z^3*b[2]
-// c[] (slow path): degree-6 polynomial for (log(1+z) - z) / z^2
-//                  then log(1+z) ≈ z + z^2 * P(z^2) where P has 6 coeffs
 
 A = 1.0/128.0;
 I = [-A, A];
 
-// --- b[]: degree-2 approximation of log(1+z) (fast path) ---
+// --- b[]: degree-3 minimax of log(1+z) (fast path) ---
 // The fast path evaluates: (e*ln2 + tl[j]) + z*b[0] + z^2*(b[1] + z*b[2])
 // which is: (e*ln2 + tl[j]) + b[0]*z + b[1]*z^2 + b[2]*z^3
-// So b[] is a degree-3 minimax of log(1+z) on I
 print("// b[] — fpminimax(log(1+x), deg 3) on [-1/128, 1/128] (fast path):");
 pb = fpminimax(log(1+x), 3, [|53,53,53,53|], I, absolute, floating, 0);
 for i from 0 to 3 do {
@@ -43,17 +36,8 @@ for i from 0 to 3 do {
 };
 print("");
 
-print("// Hardcoded in source (verified by exhaustive MPFR test):");
-print("//   ", 0x1.00000006342eap0, ",");
-print("//   ", -0x1.0001f7fdc3977p-1, ",");
-print("//   ", 0x1.554a4e5cae9cfp-2);
-
 // --- c[]: degree-6 approximation of (log(1+z)-z)/z^2 (slow path) ---
-// The slow path evaluates: z + z^2 * P(z^2) where P ≈ (log(1+z)-z)/z^2
-// Written as: f = z^2 * (c[0] + z*c[1] + z^2*(c[2] + z*c[3] + z^2*(c[4] + z*c[5] + z^2*c[6])))
-// This is: z^2*P(z) where P is degree-6 in z (degree 3 in z^2)
-// So P(z) ≈ (log(1+z) - z)/z^2
-print("");
+// f = z^2 * (c[0] + z*c[1] + z^2*(c[2] + z*c[3] + z^2*(c[4] + z*c[5] + z^2*c[6])))
 print("// c[] — fpminimax((log(1+x)-x)/x^2, deg 6) on [-1/128, 1/128] (slow path):");
 pc = fpminimax((log(1+x)-x)/(x*x), 6, [|53,53,53,53,53,53,53|], I, absolute, floating, 0);
 for i from 0 to 6 do {
@@ -61,17 +45,7 @@ for i from 0 to 6 do {
 };
 print("");
 
-print("// Hardcoded in source (verified by exhaustive MPFR test):");
-print("//   ", -0x1p-1, ",");
-print("//   ", 0x1.55555555571cap-2, ",");
-print("//   ", -0x1.0000000002d85p-2, ",");
-print("//   ", 0x1.9999987d0c963p-3, ",");
-print("//   ", -0x1.555554059a8bbp-3, ",");
-print("//   ", 0x1.24aebcf71a38fp-3, ",");
-print("//   ", -0x1.001c73915d758p-3);
-
 // --- Error bounds ---
-print("");
 print("// Infinity-norm error for fpminimax polynomials:");
 print("//   b:  ", dirtyinfnorm(pb - log(1+x), I));
 print("//   c:  ", dirtyinfnorm(pc - (log(1+x)-x)/(x*x), I));

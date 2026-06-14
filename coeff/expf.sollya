@@ -37,14 +37,7 @@ for i from 0 to 3 do {
 };
 print("");
 
-print("// Hardcoded in source (verified by exhaustive MPFR test):");
-print("//   ", 1.0, ",");
-print("//   ", 0x1.62e42fef4c4e7p-1, ",");
-print("//   ", 0x1.ebfd1b232f475p-3, ",");
-print("//   ", 0x1.c6b19384ecd93p-5);
-
 // --- c[]: degree-5 approximation of (exp(ln(2)*h)-1)/h ---
-print("");
 print("// c[] — fpminimax((exp(ln2*x)-1)/x, deg 5) on [-0.5, 0.5]:");
 pc = fpminimax((exp(log(2)*x)-1)/x, 5, [|53,53,53,53,53,53|], I, absolute, floating, 0);
 for i from 0 to 5 do {
@@ -52,16 +45,7 @@ for i from 0 to 5 do {
 };
 print("");
 
-print("// Hardcoded in source (verified by exhaustive MPFR test):");
-print("//   ", 0x1.62e42fefa39efp-1, ",");
-print("//   ", 0x1.ebfbdff82c58fp-3, ",");
-print("//   ", 0x1.c6b08d702e0edp-5, ",");
-print("//   ", 0x1.3b2ab6fb92e5ep-7, ",");
-print("//   ", 0x1.5d886e6d54203p-10, ",");
-print("//   ", 0x1.430976b8ce6efp-13);
-
 // --- Error bounds ---
-print("");
 print("// Infinity-norm error for fpminimax polynomials:");
 print("//   b:  ", dirtyinfnorm(pb - exp(log(2)*x), I));
 print("//   c:  ", dirtyinfnorm(pc - (exp(log(2)*x)-1)/x, I));
