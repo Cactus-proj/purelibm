@@ -49,32 +49,23 @@ static inline int purelibm_consistency_check_f32_range(
     const char *label) {
     int mismatches = 0;
 
-    for (uint32_t u = start; u <= end && mismatches < PURELIBM_CONSISTENCY_MAX_REPORT;
-         u++) {
+    /* Use uint64_t loop counter to avoid overflow when end == UINT32_MAX
+     * (u++ would wrap from 0xffffffff to 0, creating an infinite loop). */
+    for (uint64_t i = start; i <= (uint64_t)end; i++) {
+        uint32_t u = (uint32_t)i;
         float x = purelibm_f32_from_bits(u);
         float our_y = our_func(x);
         float their_y = core_math_func(x);
 
         if (!purelibm_is_equal_f32(our_y, their_y)) {
-            printf("CONSISTENCY FAIL [%s] x=%08" PRIx32 " (%a)"
-                   " ours=%08" PRIx32 " (%a) coremath=%08" PRIx32 " (%a)\n",
-                   label, u, (double)x,
-                   purelibm_f32_to_bits(our_y), (double)our_y,
-                   purelibm_f32_to_bits(their_y), (double)their_y);
             mismatches++;
-        }
-    }
-
-    /* Continue counting beyond the report cap so the caller knows the
-     * full extent of the mismatch. */
-    if (mismatches >= PURELIBM_CONSISTENCY_MAX_REPORT) {
-        for (uint32_t u = start + PURELIBM_CONSISTENCY_MAX_REPORT;
-             u <= end; u++) {
-            float x = purelibm_f32_from_bits(u);
-            float our_y = our_func(x);
-            float their_y = core_math_func(x);
-            if (!purelibm_is_equal_f32(our_y, their_y))
-                mismatches++;
+            if (mismatches <= PURELIBM_CONSISTENCY_MAX_REPORT) {
+                printf("CONSISTENCY FAIL [%s] x=%08" PRIx32 " (%a)"
+                       " ours=%08" PRIx32 " (%a) coremath=%08" PRIx32 " (%a)\n",
+                       label, u, (double)x,
+                       purelibm_f32_to_bits(our_y), (double)our_y,
+                       purelibm_f32_to_bits(their_y), (double)their_y);
+            }
         }
     }
 
@@ -82,6 +73,9 @@ static inline int purelibm_consistency_check_f32_range(
         uint64_t total = (uint64_t)end - (uint64_t)start + UINT64_C(1);
         printf("CONSISTENCY OK [%s]: %" PRIu64 " inputs checked, 0 mismatches\n",
                label, total);
+    } else {
+        printf("CONSISTENCY FAIL [%s]: %d total mismatches\n",
+               label, mismatches);
     }
     return mismatches;
 }
