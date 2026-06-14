@@ -67,3 +67,27 @@ if(MPFR_FOUND)
   add_test(NAME exhaustive_driver_smoke COMMAND $<TARGET_FILE:test_exhaustive_driver>)
   set_tests_properties(exhaustive_driver_smoke PROPERTIES LABELS "smoke")
 endif()
+
+# --- M2 Pilot: cr_expf ---
+if(MPFR_FOUND)
+  purelibm_add_test(test_exhaust_expf
+    SOURCES test_exhaust_expf.c
+    LINK_LIBS PkgConfig::MPFR
+    EXHAUSTIVE
+  )
+  if(OpenMP_C_FOUND)
+    target_link_libraries(test_exhaust_expf PRIVATE OpenMP::OpenMP_C)
+  endif()
+endif()
+
+if(PURELIBM_CORE_MATH_FOUND AND MPFR_FOUND)
+  purelibm_add_core_math_obj(
+    NAME expf
+    CORE_MATH_SRC "${CORE_MATH_BINARY32_DIR}/exp/expf.c"
+  )
+  purelibm_add_test(test_consistency_expf
+    SOURCES test_consistency_expf.c
+    LINK_LIBS core_math_expf_obj PkgConfig::MPFR
+    EXHAUSTIVE
+  )
+endif()

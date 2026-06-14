@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// expf coefficient generation script for PureLibm
+//
+// Usage:  sollya expf.sollya
+//
+// Generates polynomial coefficients for:
+//   - Fast path: cubic reconstruction polynomial b[0..3] for exp(r)
+//   - Slow path: degree-5 core polynomial  c[0..5] for exp(r)-1
+//   - Interval:   r in [-log(2)/128, log(2)/128]
+
+prec = 200;
+
+// Reduce the range-reduced interval
+A = log(2)/128;
+I = [-A, A];
+
+// --- Fast-path polynomials ---
+
+// b[]: degree-3 approximation of exp(x) on [-A, A]
+display = hexadecimal;
+pb = remez(exp(x), 3, I);
+print("// Reconstruction polynomial b[] (degree 3, exp(r)):");
+for i from 0 to 3 do {
+    print("  ", coeff(pb, i), ",");
+};
+print("");
+
+// --- Slow-path polynomials ---
+
+// c[]: degree-5 approximation of exp(x)-1 on [-A, A]
+pc = remez(exp(x) - 1, 5, I);
+print("// Core polynomial c[] (degree 5, exp(r)-1):");
+for i from 0 to 5 do {
+    print("  ", coeff(pc, i), ",");
+};
+print("");
+
+// --- Error bounds ---
+
+print("// Infinity-norm errors:");
+print("//   b:  ", dirtyinfnorm(pb - exp(x), I));
+print("//   c:  ", dirtyinfnorm(pc - (exp(x)-1), I));
