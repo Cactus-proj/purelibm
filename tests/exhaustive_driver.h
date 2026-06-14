@@ -84,6 +84,11 @@ static inline int purelibm_exhaustive_run_f32(
     const char *func_name,
     uint32_t start,
     uint32_t end) {
+    /* Guard against empty range to avoid uint64_t underflow in total. */
+    if (start > end) {
+        printf("EXHAUSTIVE SKIP [%s]: empty range\n", func_name);
+        return 0;
+    }
     uint64_t total = (uint64_t)end - (uint64_t)start + UINT64_C(1);
     uint64_t checked = 0;
     int failures = 0;
