@@ -100,3 +100,27 @@ if(PURELIBM_CORE_MATH_FOUND AND MPFR_FOUND)
     EXHAUSTIVE
   )
 endif()
+
+# --- M2 Pilot: cr_logf ---
+if(MPFR_FOUND)
+  purelibm_add_test(test_exhaust_logf
+    SOURCES test_exhaust_logf.c
+    LINK_LIBS PkgConfig::MPFR
+    EXHAUSTIVE
+  )
+  if(OpenMP_C_FOUND)
+    target_link_libraries(test_exhaust_logf PRIVATE OpenMP::OpenMP_C)
+  endif()
+endif()
+
+if(PURELIBM_CORE_MATH_FOUND AND MPFR_FOUND)
+  purelibm_add_core_math_obj(
+    NAME logf
+    CORE_MATH_SRC "${CORE_MATH_BINARY32_DIR}/log/logf.c"
+  )
+  purelibm_add_test(test_consistency_logf
+    SOURCES test_consistency_logf.c
+    LINK_LIBS core_math_logf_obj PkgConfig::MPFR
+    EXHAUSTIVE
+  )
+endif()

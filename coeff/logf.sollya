@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+// logf coefficient generation script for PureLibm
+//
+// Usage:  sollya logf.sollya
+//
+// Generates polynomial coefficients for:
+//   - Fast path: degree-2 polynomial b[0..2] for log(1+z)
+//   - Slow path: degree-6 polynomial c[0..6] for log(1+z)
+//   - Interval:   z in [-1/128, 1/128]
+
+prec = 200;
+
+A = 1.0/128.0;
+I = [-A, A];
+
+// --- Fast-path polynomial ---
+display = hexadecimal;
+pb = remez(log(1+x), 2, I);
+print("// Fast path b[] (degree 2, log(1+z)):");
+for i from 0 to 2 do {
+    print("  ", coeff(pb, i), ",");
+};
+print("");
+
+// --- Slow-path polynomial ---
+pc = remez(log(1+x), 6, I);
+print("// Slow path c[] (degree 6, log(1+z)):");
+for i from 0 to 6 do {
+    print("  ", coeff(pc, i), ",");
+};
+print("");
+
+// --- Error bounds ---
+print("// Infinity-norm errors:");
+print("//   b:  ", dirtyinfnorm(pb - log(1+x), I));
+print("//   c:  ", dirtyinfnorm(pc - log(1+x), I));
