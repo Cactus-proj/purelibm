@@ -10,6 +10,7 @@ project(
 include(CheckCCompilerFlag)
 include(CTest)
 find_package(PkgConfig QUIET)
+find_package(OpenMP)
 
 option(PURELIBM_REQUIRE_MPFR "Require MPFR for oracle tests" ON)
 option(PURELIBM_REQUIRE_CORE_MATH "Require deps/core-math to be present" OFF)
@@ -28,6 +29,8 @@ else()
   endif()
 endif()
 
+check_c_compiler_flag("-fsignaling-nans" PURELIBM_HAS_FSIGNALING_NANS)
+
 set(PURELIBM_STRICT_COMPILE_OPTIONS
   "${PURELIBM_C_STANDARD_FLAG}"
   -Wall
@@ -35,9 +38,17 @@ set(PURELIBM_STRICT_COMPILE_OPTIONS
   -Wpedantic
   -Wconversion
   -Wdouble-promotion
+  -Wshadow
+  -Werror
   -fno-fast-math
   -ffp-contract=off
 )
+
+if(PURELIBM_HAS_FSIGNALING_NANS)
+  list(APPEND PURELIBM_STRICT_COMPILE_OPTIONS -fsignaling-nans)
+else()
+  message(STATUS "Compiler does not support -fsignaling-nans; skipping")
+endif()
 
 if(PkgConfig_FOUND)
   pkg_check_modules(MPFR IMPORTED_TARGET mpfr)
@@ -59,6 +70,27 @@ endif()
 
 if(PURELIBM_CORE_MATH_FOUND)
   message(STATUS "Found CORE-MATH: ${PURELIBM_CORE_MATH_DIR}")
+
+  # CORE-MATH support headers (fenv_mpfr.h etc.) — INTERFACE target so
+  # individual consistency tests can pick up the include path.
+  add_library(core_math_support INTERFACE)
+  target_include_directories(core_math_support INTERFACE
+    "${CORE_MATH_BINARY32_DIR}/support"
+  )
+
+  # Relaxed compile options for CORE-MATH sources.  CORE-MATH uses
+  # type-punning unions, __builtin_expect, and #pragma STDC FENV_ACCESS ON
+  # which would fail under PureLibm's strict flags.  We keep the semantic
+  # flags (-fno-fast-math, -ffp-contract=off) but drop -Wconversion,
+  # -Wdouble-promotion, -Wshadow, and -Werror.
+  set(PURELIBM_CORE_MATH_COMPILE_OPTIONS
+    "${PURELIBM_C_STANDARD_FLAG}"
+    -Wall
+    -Wextra
+    -Wpedantic
+    -fno-fast-math
+    -ffp-contract=off
+  )
 endif()
 
 function(purelibm_apply_options target)

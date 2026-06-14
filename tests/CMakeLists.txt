@@ -20,3 +20,43 @@ purelibm_apply_options(test_exhaustive_harness)
 target_link_libraries(test_exhaustive_harness PRIVATE purelibm)
 target_include_directories(test_exhaustive_harness PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 add_test(NAME exhaustive_harness_smoke COMMAND $<TARGET_FILE:test_exhaustive_harness>)
+
+# --- CORE-MATH consistency test infrastructure ---
+if(PURELIBM_CORE_MATH_FOUND)
+  # Build CORE-MATH's rsqrtf as a separate OBJECT library with relaxed
+  # compile options (CORE-MATH uses type-punning unions, __builtin_expect,
+  # etc. that would fail under PureLibm's strict flags).
+  set(CORE_MATH_RSQRT_SRC
+    "${PURELIBM_CORE_MATH_DIR}/src/binary32/rsqrt/rsqrtf.c"
+  )
+
+  add_library(core_math_rsqrtf_obj OBJECT ${CORE_MATH_RSQRT_SRC})
+  target_compile_options(core_math_rsqrtf_obj PRIVATE
+    ${PURELIBM_CORE_MATH_COMPILE_OPTIONS}
+  )
+  target_include_directories(core_math_rsqrtf_obj PRIVATE
+    "${PURELIBM_CORE_MATH_DIR}/src/binary32/support"
+  )
+
+  add_executable(test_core_math_smoke
+    test_core_math_smoke.c
+  )
+  purelibm_apply_options(test_core_math_smoke)
+  target_link_libraries(test_core_math_smoke PRIVATE
+    purelibm
+    core_math_rsqrtf_obj
+    m
+  )
+  add_test(NAME core_math_smoke COMMAND $<TARGET_FILE:test_core_math_smoke>)
+endif()
+
+# --- Exhaustive driver infrastructure ---
+if(MPFR_FOUND)
+  add_executable(test_exhaustive_driver test_exhaustive_driver.c)
+  purelibm_apply_options(test_exhaustive_driver)
+  target_link_libraries(test_exhaustive_driver PRIVATE purelibm PkgConfig::MPFR m)
+  if(OpenMP_C_FOUND)
+    target_link_libraries(test_exhaustive_driver PRIVATE OpenMP::OpenMP_C)
+  endif()
+  add_test(NAME exhaustive_driver_smoke COMMAND $<TARGET_FILE:test_exhaustive_driver>)
+endif()
