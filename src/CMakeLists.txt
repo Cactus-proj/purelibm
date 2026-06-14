@@ -4,6 +4,6 @@ target_include_directories(purelibm INTERFACE
   "${PROJECT_SOURCE_DIR}/src"
 )
 
-target_compile_options(purelibm INTERFACE
-  ${PURELIBM_STRICT_COMPILE_OPTIONS}
-)
+# Strict compile options are applied per-target via purelibm_apply_options().
+# We do NOT propagate them through the INTERFACE library — consumers should
+# not be forced into -Werror, -Wconversion, etc.
