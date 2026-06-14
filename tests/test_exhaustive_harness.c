@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 #include "test_common.h"
 #include "exhaustive_harness.h"
 #include "utils/ieee754.h"

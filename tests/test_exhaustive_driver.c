@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 /* Smoke test for the exhaustive driver infrastructure.
  *
  * Exercises purelibm_check_one_f32, purelibm_exhaustive_run_f32, and

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 /* Smoke test: verify CORE-MATH source compiles, links, and runs correctly.
  *
  * Compiles CORE-MATH's rsqrtf.c alongside this file and checks that

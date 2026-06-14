@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 #ifndef PURELIBM_TESTS_COMMON_H
 #define PURELIBM_TESTS_COMMON_H
 

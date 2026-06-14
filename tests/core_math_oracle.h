@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 #ifndef PURELIBM_TESTS_CORE_MATH_ORACLE_H
 #define PURELIBM_TESTS_CORE_MATH_ORACLE_H
 
