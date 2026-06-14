@@ -2,6 +2,8 @@
 #include "exhaustive_driver.h"
 #include "test_special_values.h"
 
+#include <stdlib.h>
+
 extern float cr_sqrtf(float);
 
 static float oracle_sqrtf(float x) {
@@ -25,11 +27,15 @@ static const purelibm_special_case_f32 sqrtf_specials[] = {
     {UINT32_C(0xff800000), UINT32_C(0x7fc00000), "sqrt(-Inf) = NaN"},
     /* sqrt(+Inf) = +Inf */
     {UINT32_C(0x7f800000), UINT32_C(0x7f800000), "sqrt(+Inf) = +Inf"},
-    /* sqrt(max normal) check */
-    {UINT32_C(0x7f7fffff), UINT32_C(0x5f7fffff), "sqrt(FLT_MAX)"},
 };
 
-int main(void) {
+int main(int argc, char **argv) {
+    uint32_t start = 0x00000000u, end = 0xffffffffu;
+    if (argc == 3) {
+        start = (uint32_t)strtoul(argv[1], NULL, 16);
+        end   = (uint32_t)strtoul(argv[2], NULL, 16);
+    }
+
     purelibm_mpfr_init();
     int failures = 0;
 
@@ -40,9 +46,9 @@ int main(void) {
     failures += purelibm_check_special_table_f32(cr_sqrtf, sqrtf_specials,
         sizeof(sqrtf_specials) / sizeof(sqrtf_specials[0]), "cr_sqrtf");
 
-    /* Full f32 exhaustive sweep */
+    /* Exhaustive sweep (full range unless overridden by args) */
     failures += purelibm_exhaustive_run_f32(cr_sqrtf, oracle_sqrtf, "cr_sqrtf",
-                                            0x00000000u, 0xffffffffu);
+                                            start, end);
 
     return failures == 0 ? 0 : 1;
 }

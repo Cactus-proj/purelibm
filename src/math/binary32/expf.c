@@ -125,9 +125,10 @@ float cr_expf(float x) {
         /* |x| > 0x1.62e42ep+6 or NaN or |x| < 0x1.93813ep-16 */
 
         if (ux < 0x6f93813eu) {
-            /* |x| < 0x1.93813ep-16: exp(x) ≈ 1 + x + x^2/2 */
-            float zf = (float)z;
-            return 1.0f + zf * (1.0f + zf * 0.5f);
+            /* |x| < 0x1.93813ep-16: exp(x) ≈ 1 + x + x^2/2.
+             * Must compute in double — the f32 Taylor series lacks
+             * sufficient precision near rounding boundaries. */
+            return (float)(1.0 + z * (1.0 + z * 0.5));
         }
 
         uint32_t ix = ux >> 1;

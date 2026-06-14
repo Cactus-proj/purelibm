@@ -149,7 +149,7 @@ float cr_logf(float x) {
      */
     uint32_t m = ux & ((UINT32_C(1) << 23) - 1);
     uint32_t j = (m + (UINT32_C(1) << (23 - 7))) >> (23 - 6);
-    int e = (int)(ux >> 23) - 127;
+    int e = ((int32_t)ux >> 23) - 127;
 
     uint64_t m_bits = ((uint64_t)m | ((uint64_t)1023 << 23)) << (52 - 23);
     double mf = purelibm_f64_from_bits(m_bits);

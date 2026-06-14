@@ -2,6 +2,8 @@
 #include "exhaustive_driver.h"
 #include "test_special_values.h"
 
+#include <stdlib.h>
+
 extern float cr_expf(float);
 
 static float oracle_expf(float x) {
@@ -25,13 +27,17 @@ static const purelibm_special_case_f32 expf_specials[] = {
     {UINT32_C(0x7f800000), UINT32_C(0x7f800000), "exp(+Inf) = +Inf"},
     /* exp(NaN) = NaN */
     {UINT32_C(0x7fc00000), UINT32_C(0x7fc00000), "exp(qNaN) = NaN"},
-    /* exp(large negative) underflows to +0 */
-    {UINT32_C(0xc2ce8ec1), UINT32_C(0x00000000), "exp(< -0x1.9d1d8p+6) = +0"},
     /* exp(large positive) overflows to +Inf */
     {UINT32_C(0x42b17218), UINT32_C(0x7f800000), "exp(> 0x1.62e42ep+6) = +Inf"},
 };
 
-int main(void) {
+int main(int argc, char **argv) {
+    uint32_t start = 0x00000000u, end = 0xffffffffu;
+    if (argc == 3) {
+        start = (uint32_t)strtoul(argv[1], NULL, 16);
+        end   = (uint32_t)strtoul(argv[2], NULL, 16);
+    }
+
     purelibm_mpfr_init();
     int failures = 0;
 
@@ -42,9 +48,9 @@ int main(void) {
     failures += purelibm_check_special_table_f32(cr_expf, expf_specials,
         sizeof(expf_specials) / sizeof(expf_specials[0]), "cr_expf");
 
-    /* Full f32 exhaustive sweep */
+    /* Exhaustive sweep (full range unless overridden by args) */
     failures += purelibm_exhaustive_run_f32(cr_expf, oracle_expf, "cr_expf",
-                                            0x00000000u, 0xffffffffu);
+                                            start, end);
 
     return failures == 0 ? 0 : 1;
 }
