@@ -99,6 +99,72 @@ function(purelibm_apply_options target)
   target_compile_options(${target} PRIVATE ${PURELIBM_STRICT_COMPILE_OPTIONS})
 endfunction()
 
+# --- Per-function test helper ---
+#
+# purelibm_add_test(
+#   NAME        <name>
+#   SOURCES     <src1> [src2 ...]
+#   LINK_LIBS   <lib1> [lib2 ...]
+#   [EXHAUSTIVE]
+# )
+#
+# Creates a test executable, applies strict compile options, registers
+# with CTest, and assigns a label: "smoke" (default) or "exhaustive".
+#
+# Usage:
+#   purelibm_add_test(test_exhaust_expf
+#     SOURCES test_exhaust_expf.c
+#     LINK_LIBS PkgConfig::MPFR OpenMP::OpenMP_C
+#     EXHAUSTIVE
+#   )
+function(purelibm_add_test name)
+  set(options EXHAUSTIVE)
+  set(oneValueArgs "")
+  set(multiValueArgs SOURCES LINK_LIBS)
+  cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  add_executable(${name} ${ARG_SOURCES})
+  purelibm_apply_options(${name})
+  target_link_libraries(${name} PRIVATE purelibm ${ARG_LINK_LIBS} m)
+  target_include_directories(${name} PRIVATE "${PROJECT_SOURCE_DIR}/tests")
+
+  add_test(NAME ${name} COMMAND $<TARGET_FILE:${name}>)
+  if(ARG_EXHAUSTIVE)
+    set_tests_properties(${name} PROPERTIES LABELS "exhaustive")
+  else()
+    set_tests_properties(${name} PROPERTIES LABELS "smoke")
+  endif()
+endfunction()
+
+# --- CORE-MATH consistency helper ---
+#
+# purelibm_add_core_math_obj(
+#   NAME        <func-name>       # e.g. "expf"
+#   CORE_MATH_SRC <path>          # deps/core-math/src/binary32/exp/expf.c
+# )
+#
+# Creates an OBJECT library that compiles the CORE-MATH source with
+# relaxed flags and renames cr_<func> to core_math_<func> to avoid
+# symbol collision with PureLibm's own implementation.
+#
+# Usage:
+#   purelibm_add_core_math_obj(
+#     NAME expf
+#     CORE_MATH_SRC "${CORE_MATH_BINARY32_DIR}/exp/expf.c"
+#   )
+function(purelibm_add_core_math_obj)
+  set(oneValueArgs NAME CORE_MATH_SRC)
+  cmake_parse_arguments(ARG "" "${oneValueArgs}" "" ${ARGN})
+
+  add_library(core_math_${ARG_NAME}_obj OBJECT "${ARG_CORE_MATH_SRC}")
+  target_compile_options(core_math_${ARG_NAME}_obj PRIVATE
+    ${PURELIBM_CORE_MATH_COMPILE_OPTIONS})
+  target_include_directories(core_math_${ARG_NAME}_obj PRIVATE
+    "${CORE_MATH_BINARY32_DIR}/support")
+  target_compile_definitions(core_math_${ARG_NAME}_obj PRIVATE
+    cr_${ARG_NAME}=core_math_${ARG_NAME})
+endfunction()
+
 add_subdirectory(src)
 
 if(BUILD_TESTING)

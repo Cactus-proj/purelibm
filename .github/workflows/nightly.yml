@@ -1,0 +1,48 @@
+name: Nightly exhaustive
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily at 06:00 UTC
+  workflow_dispatch:       # allow manual trigger
+
+jobs:
+  exhaustive:
+    name: exhaustive-${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc
+            cc: gcc
+          - compiler: clang
+            cc: clang
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config libmpfr-dev clang
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DPURELIBM_REQUIRE_MPFR=ON \
+            -DPURELIBM_REQUIRE_CORE_MATH=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (exhaustive only)
+        env:
+          OMP_NUM_THREADS: 4
+        run: ctest --test-dir build --output-on-failure -L exhaustive
