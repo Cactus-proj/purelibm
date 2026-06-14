@@ -25,6 +25,8 @@ static inline bool purelibm_u32_range_next(purelibm_u32_range *range, uint32_t *
     if (!range->started) {
         range->started = true;
     } else if (range->current == range->end) {
+        /* Last element already yielded — signal completion before incrementing
+         * to avoid wrap-around when end == UINT32_MAX. */
         range->done = true;
         return false;
     } else {
