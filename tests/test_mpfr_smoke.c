@@ -15,8 +15,9 @@ static int test_mpfr_init_bounds(void) {
     mpfr_t tiny;
     mpfr_init2(tiny, 24);
     mpfr_set_ui_2exp(tiny, 1, -149, MPFR_RNDN);
-    /* Should not underflow — emin is -148, meaning 2^-149 is representable
-     * as a subnormal */
+    /* Should not underflow — emin is -1073 (covers full f64 subnormal range),
+     * well below the f32 subnormal exponent.  mpfr_subnormalize handles the
+     * final IEEE subnormal conversion correctly. */
     float result = purelibm_mpfr_to_f32(tiny, MPFR_RNDN);
     failures += purelibm_test_assert_f32_bits(result, UINT32_C(0x00000001));
     mpfr_clear(tiny);
