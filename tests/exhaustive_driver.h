@@ -176,4 +176,98 @@ static inline int purelibm_check_specials_f32(
     return failures;
 }
 
+/* ================================================================
+ * f64 variants — same API as f32, for double-precision functions.
+ *
+ * Unlike f32, a full 2^64 exhaustive sweep is infeasible.  These
+ * functions are designed for subrange scans, random sampling, and
+ * boundary-value checks as specified in DESIGN.md §4.4.
+ * ================================================================ */
+
+static inline int purelibm_check_one_f64(double x,
+                                         double (*f_under_test)(double),
+                                         double (*f_oracle)(double),
+                                         const char *func_name) {
+    double y_ut = f_under_test(x);
+    double y_oracle = f_oracle(x);
+
+    if (!purelibm_is_equal_f64(y_ut, y_oracle)) {
+        uint64_t xu = purelibm_f64_to_bits(x);
+        uint64_t yu = purelibm_f64_to_bits(y_ut);
+        uint64_t yo = purelibm_f64_to_bits(y_oracle);
+        printf("EXHAUSTIVE FAIL [%s] x=%016" PRIx64 " (%a)"
+               " got=%016" PRIx64 " (%a) expected=%016" PRIx64 " (%a)\n",
+               func_name, xu, x,
+               yu, y_ut,
+               yo, y_oracle);
+        return 1;
+    }
+    return 0;
+}
+
+static inline int purelibm_exhaustive_run_f64(
+    double (*f_under_test)(double),
+    double (*f_oracle)(double),
+    const char *func_name,
+    uint64_t start,
+    uint64_t end) {
+    uint64_t total = (end - start) + UINT64_C(1);
+    if (end < start) total = UINT64_C(0);
+    uint64_t checked = 0;
+    int failures = 0;
+
+    printf("EXHAUSTIVE START [%s]: %" PRIu64 " inputs"
+           " (0x%016" PRIx64 " .. 0x%016" PRIx64 ")\n",
+           func_name, total, start, end);
+
+    for (uint64_t i = start; i <= end && i >= start; i++) {
+        double x = purelibm_f64_from_bits(i);
+        failures += purelibm_check_one_f64(x, f_under_test, f_oracle,
+                                           func_name);
+        checked++;
+    }
+
+    if (failures == 0) {
+        printf("EXHAUSTIVE PASS [%s]: %" PRIu64 " inputs checked,"
+               " 0 failures\n",
+               func_name, checked);
+    } else {
+        printf("EXHAUSTIVE FAIL [%s]: %" PRIu64 " inputs checked,"
+               " %d failure(s)\n",
+               func_name, checked, failures);
+    }
+    return failures == 0 ? 0 : 1;
+}
+
+static inline int purelibm_check_specials_f64(
+    double (*f_under_test)(double),
+    double (*f_oracle)(double),
+    const char *func_name) {
+    int failures = 0;
+
+    double pzero = purelibm_f64_from_bits(UINT64_C(0x0000000000000000));
+    double nzero = purelibm_f64_from_bits(UINT64_C(0x8000000000000000));
+    double pinf  = purelibm_f64_from_bits(UINT64_C(0x7ff0000000000000));
+    double ninf  = purelibm_f64_from_bits(UINT64_C(0xfff0000000000000));
+    double qnan1 = purelibm_f64_from_bits(UINT64_C(0x7ff8000000000000));
+    double qnan2 = purelibm_f64_from_bits(UINT64_C(0x7fffffffffffffff));
+    double snan1 = purelibm_f64_from_bits(UINT64_C(0x7ff0000000000001));
+    double snan2 = purelibm_f64_from_bits(UINT64_C(0x7ff7ffffffffffff));
+    double ssub  = purelibm_f64_from_bits(UINT64_C(0x0000000000000001));
+    double lsub  = purelibm_f64_from_bits(UINT64_C(0x000fffffffffffff));
+
+    failures += purelibm_check_one_f64(pzero, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(nzero, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(pinf,  f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(ninf,  f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(qnan1, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(qnan2, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(snan1, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(snan2, f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(ssub,  f_under_test, f_oracle, func_name);
+    failures += purelibm_check_one_f64(lsub,  f_under_test, f_oracle, func_name);
+
+    return failures;
+}
+
 #endif
