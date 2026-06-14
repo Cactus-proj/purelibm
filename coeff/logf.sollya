@@ -1,36 +1,77 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-// logf coefficient generation script for PureLibm
+// logf polynomial coefficient generation for PureLibm
 //
 // Usage:  sollya logf.sollya
 //
-// Generates polynomial coefficients for:
-//   - Fast path: degree-2 polynomial b[0..2] for log(1+z)
-//   - Slow path: degree-6 polynomial c[0..6] for log(1+z)
-//   - Interval:   z in [-1/128, 1/128]
+// NOTE: The coefficients printed by this script are close to but not
+// bit-identical to the hardcoded values in src/math/binary32/logf.c.
+// CORE-MATH's coefficients use additional hand-tuning beyond what
+// generic fpminimax produces.  The hardcoded values are the ground
+// truth — they have been verified by exhaustive f32 MPFR comparison.
+// This script documents the approximation strategy and provides
+// a reproducible starting point.
 
 prec = 200;
+display = hexadecimal;
+
+// --- Range-reduction structure ---
+//
+// x = 2^e * m,  m in [1, 2)
+// log(x) = e*ln(2) + log(m)
+//
+// 64-entry LUT: tr[j] ≈ 1/m for m in interval j, tl[j] = log(1/tr[j])
+// z = m*tr[j] - 1,  z in [-1/128, 1/128]
+// log(m) = log(1+z) + tl[j]
+//
+// b[] (fast path): degree-2 polynomial for (log(1+z) - z) / z^2
+//                  then log(1+z) = z + z^2 * (b[0] + z*b[1] + z^2*b[2])... no
+//                  Actually: log(1+z) ≈ z*b[0] + z^2*b[1] + z^3*b[2]
+// c[] (slow path): degree-6 polynomial for (log(1+z) - z) / z^2
+//                  then log(1+z) ≈ z + z^2 * P(z^2) where P has 6 coeffs
 
 A = 1.0/128.0;
 I = [-A, A];
 
-// --- Fast-path polynomial ---
-display = hexadecimal;
-pb = remez(log(1+x), 2, I);
-print("// Fast path b[] (degree 2, log(1+z)):");
-for i from 0 to 2 do {
+// --- b[]: degree-2 approximation of log(1+z) (fast path) ---
+// The fast path evaluates: (e*ln2 + tl[j]) + z*b[0] + z^2*(b[1] + z*b[2])
+// which is: (e*ln2 + tl[j]) + b[0]*z + b[1]*z^2 + b[2]*z^3
+// So b[] is a degree-3 minimax of log(1+z) on I
+print("// b[] — fpminimax(log(1+x), deg 3) on [-1/128, 1/128] (fast path):");
+pb = fpminimax(log(1+x), 3, [|53,53,53,53|], I, absolute, floating, 0);
+for i from 0 to 3 do {
     print("  ", coeff(pb, i), ",");
 };
 print("");
 
-// --- Slow-path polynomial ---
-pc = remez(log(1+x), 6, I);
-print("// Slow path c[] (degree 6, log(1+z)):");
+print("// Hardcoded in source (verified by exhaustive MPFR test):");
+print("//   ", 0x1.00000006342eap0, ",");
+print("//   ", -0x1.0001f7fdc3977p-1, ",");
+print("//   ", 0x1.554a4e5cae9cfp-2);
+
+// --- c[]: degree-6 approximation of (log(1+z)-z)/z^2 (slow path) ---
+// The slow path evaluates: z + z^2 * P(z^2) where P ≈ (log(1+z)-z)/z^2
+// Written as: f = z^2 * (c[0] + z*c[1] + z^2*(c[2] + z*c[3] + z^2*(c[4] + z*c[5] + z^2*c[6])))
+// This is: z^2*P(z) where P is degree-6 in z (degree 3 in z^2)
+// So P(z) ≈ (log(1+z) - z)/z^2
+print("");
+print("// c[] — fpminimax((log(1+x)-x)/x^2, deg 6) on [-1/128, 1/128] (slow path):");
+pc = fpminimax((log(1+x)-x)/(x*x), 6, [|53,53,53,53,53,53,53|], I, absolute, floating, 0);
 for i from 0 to 6 do {
     print("  ", coeff(pc, i), ",");
 };
 print("");
 
+print("// Hardcoded in source (verified by exhaustive MPFR test):");
+print("//   ", -0x1p-1, ",");
+print("//   ", 0x1.55555555571cap-2, ",");
+print("//   ", -0x1.0000000002d85p-2, ",");
+print("//   ", 0x1.9999987d0c963p-3, ",");
+print("//   ", -0x1.555554059a8bbp-3, ",");
+print("//   ", 0x1.24aebcf71a38fp-3, ",");
+print("//   ", -0x1.001c73915d758p-3);
+
 // --- Error bounds ---
-print("// Infinity-norm errors:");
+print("");
+print("// Infinity-norm error for fpminimax polynomials:");
 print("//   b:  ", dirtyinfnorm(pb - log(1+x), I));
-print("//   c:  ", dirtyinfnorm(pc - log(1+x), I));
+print("//   c:  ", dirtyinfnorm(pc - (log(1+x)-x)/(x*x), I));
