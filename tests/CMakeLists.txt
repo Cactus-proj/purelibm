@@ -78,6 +78,15 @@ if(MPFR_FOUND)
   if(OpenMP_C_FOUND)
     target_link_libraries(test_exhaust_expf PRIVATE OpenMP::OpenMP_C)
   endif()
+
+  purelibm_add_test(test_exhaust_sqrtf
+    SOURCES test_exhaust_sqrtf.c
+    LINK_LIBS PkgConfig::MPFR
+    EXHAUSTIVE
+  )
+  if(OpenMP_C_FOUND)
+    target_link_libraries(test_exhaust_sqrtf PRIVATE OpenMP::OpenMP_C)
+  endif()
 endif()
 
 if(PURELIBM_CORE_MATH_FOUND AND MPFR_FOUND)

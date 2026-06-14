@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+#include "exhaustive_driver.h"
+#include "test_special_values.h"
+
+extern float cr_sqrtf(float);
+
+static float oracle_sqrtf(float x) {
+    /* sqrt(-0) → -0 per C23: mpfr_sqrt(-0) produces -0 since MPFR
+     * handles signed zero correctly. */
+    return purelibm_mpfr_unary_f32(x, mpfr_sqrt, MPFR_RNDN);
+}
+
+/* Per-function special values for sqrtf.
+ * Expected bit patterns verified against MPFR with round-to-nearest-even. */
+static const purelibm_special_case_f32 sqrtf_specials[] = {
+    /* sqrt(1.0) = 1.0 */
+    {UINT32_C(0x3f800000), UINT32_C(0x3f800000), "sqrt(1.0) = 1.0"},
+    /* sqrt(4.0) = 2.0 */
+    {UINT32_C(0x40800000), UINT32_C(0x40000000), "sqrt(4.0) = 2.0"},
+    /* sqrt(0.25) = 0.5 */
+    {UINT32_C(0x3e800000), UINT32_C(0x3f000000), "sqrt(0.25) = 0.5"},
+    /* sqrt(-1.0) = NaN */
+    {UINT32_C(0xbf800000), UINT32_C(0x7fc00000), "sqrt(-1.0) = NaN"},
+    /* sqrt(-Inf) = NaN */
+    {UINT32_C(0xff800000), UINT32_C(0x7fc00000), "sqrt(-Inf) = NaN"},
+    /* sqrt(+Inf) = +Inf */
+    {UINT32_C(0x7f800000), UINT32_C(0x7f800000), "sqrt(+Inf) = +Inf"},
+    /* sqrt(max normal) check */
+    {UINT32_C(0x7f7fffff), UINT32_C(0x5f7fffff), "sqrt(FLT_MAX)"},
+};
+
+int main(void) {
+    purelibm_mpfr_init();
+    int failures = 0;
+
+    /* IEEE generic specials */
+    failures += purelibm_check_specials_f32(cr_sqrtf, oracle_sqrtf, "cr_sqrtf");
+
+    /* Per-function special values */
+    failures += purelibm_check_special_table_f32(cr_sqrtf, sqrtf_specials,
+        sizeof(sqrtf_specials) / sizeof(sqrtf_specials[0]), "cr_sqrtf");
+
+    /* Full f32 exhaustive sweep */
+    failures += purelibm_exhaustive_run_f32(cr_sqrtf, oracle_sqrtf, "cr_sqrtf",
+                                            0x00000000u, 0xffffffffu);
+
+    return failures == 0 ? 0 : 1;
+}
