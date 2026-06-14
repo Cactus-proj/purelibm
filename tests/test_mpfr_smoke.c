@@ -9,15 +9,15 @@
 static int test_mpfr_init_bounds(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     /* Verify that the smallest f32 subnormal (2^-149) can be represented */
     mpfr_t tiny;
     mpfr_init2(tiny, 24);
     mpfr_set_ui_2exp(tiny, 1, -149, MPFR_RNDN);
-    /* Should not underflow — emin is -1073 (covers full f64 subnormal range),
-     * well below the f32 subnormal exponent.  mpfr_subnormalize handles the
-     * final IEEE subnormal conversion correctly. */
+    /* Should not underflow — emin is -148, meaning 2^-149 is representable
+     * as a subnormal.  mpfr_subnormalize handles the final IEEE subnormal
+     * conversion correctly. */
     float result = purelibm_mpfr_to_f32(tiny, MPFR_RNDN);
     failures += purelibm_test_assert_f32_bits(result, UINT32_C(0x00000001));
     mpfr_clear(tiny);
@@ -38,7 +38,7 @@ static int test_mpfr_init_bounds(void) {
 static int test_mpfr_round_trip_f32(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     mpfr_t v;
     mpfr_init2(v, 200);
@@ -55,7 +55,7 @@ static int test_mpfr_round_trip_f32(void) {
 static int test_mpfr_round_trip_f64(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f64();
 
     mpfr_t v;
     mpfr_init2(v, 200);
@@ -72,7 +72,7 @@ static int test_mpfr_round_trip_f64(void) {
 static int test_mpfr_subnormal_f64(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f64();
 
     mpfr_t tiny;
     mpfr_init2(tiny, 53);
@@ -89,7 +89,7 @@ static int test_mpfr_subnormal_f64(void) {
 static int test_mpfr_unary_nan(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     /* sqrt(-1.0) should produce NaN */
     float result =
@@ -148,7 +148,7 @@ static int test_signed_zero(void) {
 static int test_domain_error_produces_nan(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     float inf = purelibm_f32_from_bits(UINT32_C(0x7f800000));
     float result =
@@ -163,7 +163,7 @@ static int test_domain_error_produces_nan(void) {
 static int test_mpfr_unary_sin(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     /* sin(0.0) should be exactly 0.0 with correct sign */
     float r0 = purelibm_mpfr_unary_f32(0.0f, mpfr_sin, MPFR_RNDN);

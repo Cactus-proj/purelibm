@@ -19,7 +19,7 @@
  *   }
  *
  *   int main(void) {
- *       purelibm_mpfr_init();
+ *       purelibm_mpfr_init_f32();
  *       int f  = purelibm_check_specials_f32(cr_sinf, oracle_sinf, "cr_sinf");
  *       f     += purelibm_exhaustive_run_f32(cr_sinf, oracle_sinf, "cr_sinf",
  *                                             0x00000000u, 0xffffffffu);

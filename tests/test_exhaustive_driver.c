@@ -61,7 +61,7 @@ static int test_check_one_mismatch(void) {
 static int test_exhaustive_small_range(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     /* Sweep a small range (256 values) where identity should pass */
     int result = purelibm_exhaustive_run_f32(identity_f32, oracle_identity,
@@ -76,7 +76,7 @@ static int test_exhaustive_small_range(void) {
 static int test_specials_coverage(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     /* identity should produce matching special values */
     failures += purelibm_check_specials_f32(identity_f32, oracle_identity,
@@ -87,7 +87,7 @@ static int test_specials_coverage(void) {
 int main(void) {
     int failures = 0;
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
 
     failures += test_check_one_normal();
     failures += test_check_one_mismatch();

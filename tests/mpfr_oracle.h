@@ -16,7 +16,7 @@
  *   }
  *
  *   int main(void) {
- *       purelibm_mpfr_init();
+ *       purelibm_mpfr_init_f32();
  *       float result = oracle_sinf(0.5f);
  *       ...
  *   }
@@ -29,14 +29,34 @@
 
 /* --- Initialization ---
  *
- * Call once before any oracle operations.  Sets MPFR exponent bounds to
- * encompass the full f64 subnormal range (which subsumes f32):
+ * Call once before any f32 oracle operations.
+ * Sets MPFR exponent bounds to cover the full f32 subnormal range:
+ *   emin = -148  (smallest f32 subnormal is 2^-149)
+ *   emax =  128  (largest  f32 normal    is 2^127)
+ *
+ * For f64 oracles, use purelibm_mpfr_init_f64() instead.
+ */
+static inline void purelibm_mpfr_init_f32(void) {
+    mpfr_set_emin(-148);
+    mpfr_set_emax(128);
+}
+
+/* --- Initialization (f64) ---
+ *
+ * Call once before any f64 oracle operations.
+ * Sets MPFR exponent bounds to cover the full f64 subnormal range:
  *   emin = -1073  (smallest f64 subnormal is 2^-1074)
  *   emax =  1024  (largest  f64 normal    is 2^1023)
  */
-static inline void purelibm_mpfr_init(void) {
+static inline void purelibm_mpfr_init_f64(void) {
     mpfr_set_emin(-1073);
     mpfr_set_emax(1024);
+}
+
+/* Convenience: call both f32 and f64 init.
+ * Useful when a test file uses both f32 and f64 oracles. */
+static inline void purelibm_mpfr_init(void) {
+    purelibm_mpfr_init_f64();
 }
 
 /* --- Correctly-rounded conversion from MPFR to float ---
@@ -50,6 +70,8 @@ static inline void purelibm_mpfr_init(void) {
 static inline float purelibm_mpfr_to_f32(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 24);
+    mpfr_set_emin(-148);
+    mpfr_set_emax(128);
     int ternary = mpfr_set(tmp, v, rnd);
     ternary = mpfr_subnormalize(tmp, ternary, rnd);
     (void)ternary;
@@ -61,6 +83,8 @@ static inline float purelibm_mpfr_to_f32(mpfr_t v, mpfr_rnd_t rnd) {
 static inline double purelibm_mpfr_to_f64(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 53);
+    mpfr_set_emin(-1073);
+    mpfr_set_emax(1024);
     int ternary = mpfr_set(tmp, v, rnd);
     ternary = mpfr_subnormalize(tmp, ternary, rnd);
     (void)ternary;
@@ -87,6 +111,10 @@ static inline float purelibm_mpfr_unary_f32(float x,
     mpfr_init2(y, 24);
     /* mpfr_set_flt at 24-bit precision is exact for any f32 input */
     mpfr_set_flt(y, x, MPFR_RNDN);
+    /* MPFR 4.x uses thread-local emin/emax — set them inside the
+     * parallel region so every OpenMP worker thread sees them. */
+    mpfr_set_emin(-148);
+    mpfr_set_emax(128);
     int ternary = mpfr_func(y, y, rnd);
     ternary = mpfr_subnormalize(y, ternary, rnd);
     (void)ternary;
@@ -101,6 +129,9 @@ static inline double purelibm_mpfr_unary_f64(
     mpfr_init2(y, 53);
     /* mpfr_set_d at 53-bit precision is exact for any f64 input */
     mpfr_set_d(y, x, MPFR_RNDN);
+    /* MPFR 4.x uses thread-local emin/emax — see note in _f32 above. */
+    mpfr_set_emin(-1073);
+    mpfr_set_emax(1024);
     int ternary = mpfr_func(y, y, rnd);
     ternary = mpfr_subnormalize(y, ternary, rnd);
     (void)ternary;

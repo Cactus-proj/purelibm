@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         end   = (uint32_t)strtoul(argv[2], NULL, 16);
     }
 
-    purelibm_mpfr_init();
+    purelibm_mpfr_init_f32();
     int failures = 0;
 
     /* IEEE generic specials */
