@@ -201,20 +201,39 @@ static inline int purelibm_exhaustive_run_f64(
     const char *func_name,
     uint64_t start,
     uint64_t end) {
-    uint64_t total = (end - start) + UINT64_C(1);
-    if (end < start) total = UINT64_C(0);
-    uint64_t checked = 0;
-    int failures = 0;
+    /* Safely compute total without overflow.  2^64 does not fit in uint64_t,
+     * so the full [0, UINT64_MAX] range is capped at UINT64_MAX. */
+    uint64_t total;
+    if (end < start) {
+        total = UINT64_C(0);
+    } else if (start == 0 && end == UINT64_MAX) {
+        total = UINT64_MAX;
+    } else {
+        total = (end - start) + UINT64_C(1);
+    }
+
+    if (total == 0) {
+        printf("EXHAUSTIVE SKIP [%s]: empty range\n", func_name);
+        return 0;
+    }
 
     printf("EXHAUSTIVE START [%s]: %" PRIu64 " inputs"
            " (0x%016" PRIx64 " .. 0x%016" PRIx64 ")\n",
            func_name, total, start, end);
 
-    for (uint64_t i = start; i <= end && i >= start; i++) {
+    /* Use a while-with-explicit-break to avoid the uint64_t wrap-around
+     * that would occur with `for (i = start; i <= end; i++)` when
+     * end == UINT64_MAX (i++ wraps to 0, loop never terminates). */
+    uint64_t i = start;
+    uint64_t checked = 0;
+    int failures = 0;
+    while (1) {
         double x = purelibm_f64_from_bits(i);
         failures += purelibm_check_one_f64(x, f_under_test, f_oracle,
                                            func_name);
         checked++;
+        if (i == end) break;
+        i++;
     }
 
     if (failures == 0) {
