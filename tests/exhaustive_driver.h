@@ -74,10 +74,6 @@ static inline int purelibm_check_one_f32(float x,
  * Returns 0 if every input passes, 1 if any failure is found.
  */
 
-#if defined(_OPENMP)
-#include <omp.h>
-#endif
-
 static inline int purelibm_exhaustive_run_f32(
     float (*f_under_test)(float),
     float (*f_oracle)(float),
