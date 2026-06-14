@@ -67,12 +67,15 @@ static inline int purelibm_check_one_f32(float x,
 /* --- Full exhaustive sweep ---
  *
  * Iterates all f32 bit patterns in [start, end].  Uses OpenMP dynamic
- * scheduling if available.  Reports progress every 2^24 (~16.8 M) inputs.
+ * scheduling if available.  Summary is printed after the reduction
+ * barrier so checked/failures reflect global totals.
  *
  * Returns 0 if every input passes, 1 if any failure is found.
  */
 
-#define PURELIBM_EXHAUSTIVE_PROGRESS_INTERVAL (UINT64_C(1) << 24)
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 static inline int purelibm_exhaustive_run_f32(
     float (*f_under_test)(float),
@@ -108,24 +111,10 @@ static inline int purelibm_exhaustive_run_f32(
         failures += purelibm_check_one_f32(x, f_under_test, f_oracle,
                                            func_name);
         checked++;
-
-#if defined(_OPENMP)
-        /* Progress from master thread only */
-        if (omp_get_thread_num() == 0)
-#endif
-        {
-            uint64_t since = checked - (checked / PURELIBM_EXHAUSTIVE_PROGRESS_INTERVAL)
-                                       * PURELIBM_EXHAUSTIVE_PROGRESS_INTERVAL;
-            /* checked just wrapped past a multiple of the interval */
-            if (since == 0 && checked > 0) {
-                double pct = 100.0 * (double)checked / (double)total;
-                printf("EXHAUSTIVE PROGRESS [%s]: %" PRIu64 " / %" PRIu64
-                       " (%.1f%%)  failures=%d\n",
-                       func_name, checked, total, pct, failures);
-            }
-        }
     }
 
+    /* Progress and summary are reported after the reduction barrier so
+     * checked and failures reflect the global totals from all threads. */
     if (failures == 0) {
         printf("EXHAUSTIVE PASS [%s]: %" PRIu64 " inputs checked,"
                " 0 failures\n",
