@@ -51,7 +51,8 @@ static inline float purelibm_mpfr_to_f32(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 24);
     int ternary = mpfr_set(tmp, v, rnd);
-    (void)mpfr_subnormalize(tmp, ternary, rnd);
+    ternary = mpfr_subnormalize(tmp, ternary, rnd);
+    (void)ternary;
     float result = mpfr_get_flt(tmp, MPFR_RNDN);
     mpfr_clear(tmp);
     return result;
@@ -61,7 +62,8 @@ static inline double purelibm_mpfr_to_f64(mpfr_t v, mpfr_rnd_t rnd) {
     mpfr_t tmp;
     mpfr_init2(tmp, 53);
     int ternary = mpfr_set(tmp, v, rnd);
-    (void)mpfr_subnormalize(tmp, ternary, rnd);
+    ternary = mpfr_subnormalize(tmp, ternary, rnd);
+    (void)ternary;
     double result = mpfr_get_d(tmp, MPFR_RNDN);
     mpfr_clear(tmp);
     return result;
@@ -86,7 +88,8 @@ static inline float purelibm_mpfr_unary_f32(float x,
     /* mpfr_set_flt at 24-bit precision is exact for any f32 input */
     mpfr_set_flt(y, x, MPFR_RNDN);
     int ternary = mpfr_func(y, y, rnd);
-    (void)mpfr_subnormalize(y, ternary, rnd);
+    ternary = mpfr_subnormalize(y, ternary, rnd);
+    (void)ternary;
     float result = mpfr_get_flt(y, MPFR_RNDN);
     mpfr_clear(y);
     return result;
@@ -99,7 +102,8 @@ static inline double purelibm_mpfr_unary_f64(
     /* mpfr_set_d at 53-bit precision is exact for any f64 input */
     mpfr_set_d(y, x, MPFR_RNDN);
     int ternary = mpfr_func(y, y, rnd);
-    (void)mpfr_subnormalize(y, ternary, rnd);
+    ternary = mpfr_subnormalize(y, ternary, rnd);
+    (void)ternary;
     double result = mpfr_get_d(y, MPFR_RNDN);
     mpfr_clear(y);
     return result;
