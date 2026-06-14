@@ -71,6 +71,8 @@ endif()
 if(PURELIBM_CORE_MATH_FOUND)
   message(STATUS "Found CORE-MATH: ${PURELIBM_CORE_MATH_DIR}")
 
+  set(CORE_MATH_BINARY32_DIR "${PURELIBM_CORE_MATH_DIR}/src/binary32")
+
   # CORE-MATH support headers (fenv_mpfr.h etc.) — INTERFACE target so
   # individual consistency tests can pick up the include path.
   add_library(core_math_support INTERFACE)

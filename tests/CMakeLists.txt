@@ -27,7 +27,7 @@ if(PURELIBM_CORE_MATH_FOUND)
   # compile options (CORE-MATH uses type-punning unions, __builtin_expect,
   # etc. that would fail under PureLibm's strict flags).
   set(CORE_MATH_RSQRT_SRC
-    "${PURELIBM_CORE_MATH_DIR}/src/binary32/rsqrt/rsqrtf.c"
+    "${CORE_MATH_BINARY32_DIR}/rsqrt/rsqrtf.c"
   )
 
   add_library(core_math_rsqrtf_obj OBJECT ${CORE_MATH_RSQRT_SRC})
@@ -35,7 +35,7 @@ if(PURELIBM_CORE_MATH_FOUND)
     ${PURELIBM_CORE_MATH_COMPILE_OPTIONS}
   )
   target_include_directories(core_math_rsqrtf_obj PRIVATE
-    "${PURELIBM_CORE_MATH_DIR}/src/binary32/support"
+    "${CORE_MATH_BINARY32_DIR}/support"
   )
 
   add_executable(test_core_math_smoke
