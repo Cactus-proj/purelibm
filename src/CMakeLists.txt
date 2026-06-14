@@ -1,9 +1,15 @@
-add_library(purelibm INTERFACE)
+# Collect all function sources.  GLOB is acceptable here because new .c
+# files are infrequent (~40 total) and require a cmake re-run anyway.
+add_subdirectory(math)
 
-target_include_directories(purelibm INTERFACE
-  "${PROJECT_SOURCE_DIR}/src"
-)
+list(APPEND PURELIBM_SRCS ${PURELIBM_BINARY32_SRCS} ${PURELIBM_BINARY64_SRCS})
 
-# Strict compile options are applied per-target via purelibm_apply_options().
-# We do NOT propagate them through the INTERFACE library — consumers should
-# not be forced into -Werror, -Wconversion, etc.
+if(PURELIBM_SRCS)
+  add_library(purelibm STATIC ${PURELIBM_SRCS})
+  purelibm_apply_options(purelibm)
+  target_include_directories(purelibm PUBLIC "${PROJECT_SOURCE_DIR}/src")
+else()
+  # No compiled functions yet — header-only INTERFACE library.
+  add_library(purelibm INTERFACE)
+  target_include_directories(purelibm INTERFACE "${PROJECT_SOURCE_DIR}/src")
+endif()
