@@ -135,16 +135,22 @@ static int test_signed_zero(void) {
     return failures;
 }
 
-/* --- Test: sNaN input produces NaN result (classification only) --- */
-static int test_snan_produces_nan(void) {
+/* --- Test: NaN domain error handling ---
+ *
+ * sin(Inf) is a domain error per C23 §7.12.4.6 and produces qNaN.
+ * We test this instead of loading an sNaN bit pattern through a native
+ * float (which could trigger SIGFPE on platforms with sNaN traps
+ * enabled, especially under -fsignaling-nans).  The NaN classification
+ * check is the same either way.
+ */
+static int test_domain_error_produces_nan(void) {
     int failures = 0;
 
     purelibm_mpfr_init();
 
-    float snan = purelibm_f32_from_bits(UINT32_C(0x7f800001));
-    /* Adding sNaN to itself should produce a qNaN (invalid operation) */
+    float inf = purelibm_f32_from_bits(UINT32_C(0x7f800000));
     float result =
-        purelibm_mpfr_unary_f32(snan, mpfr_sin, MPFR_RNDN);
+        purelibm_mpfr_unary_f32(inf, mpfr_sin, MPFR_RNDN);
     failures +=
         purelibm_test_assert_true(purelibm_f32_is_nan(result));
 
@@ -179,7 +185,7 @@ int main(void) {
     failures += test_mpfr_unary_nan();
     failures += test_nan_equality();
     failures += test_signed_zero();
-    failures += test_snan_produces_nan();
+    failures += test_domain_error_produces_nan();
     failures += test_mpfr_unary_sin();
 
     if (failures == 0) {
