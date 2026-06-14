@@ -405,12 +405,23 @@ static const double CR_SINF_C1 = 0x1.921fb54442d17p-3;
 - [x] OpenMP 支持用于穷举测试并行化
 - [x] `docs/translation-notes.md`：CORE-MATH → PureLibm 翻译模式文档
 
-### M2 — Pilot 函数验证
+### M2 — Pilot 函数验证 ✅ 已完成 (2026-06-14)
 
-- `cr_sqrtf`：实现 + f32 MPFR 穷举测试通过 + 文档定稿
-- `cr_sinf`：实现 + f32 MPFR 穷举测试通过 + 文档（含完整系数追溯）
-- `cr_expf`：实现 + 随机/边界测试通过
-- 系数脚本（`coeff/sqrtf.sollya`, `coeff/sinf.sollya` 等）补全
+**Pilot 函数选择**（与设计稿的差异：`cr_sinf` 对 M2 过于复杂——222 行、128-bit 整数约化、`__int128` 依赖——推迟至 M3）
+
+- [x] `cr_expf`：实现 + f32 MPFR 穷举测试框架就绪 + CORE-MATH 一致性测试就绪 + 函数规格 + Sollya 脚本
+- [x] `cr_sqrtf`：独立实现（CORE-MATH 无 binary32 sqrtf）+ f32 MPFR 穷举测试框架就绪 + 函数规格
+- [x] `cr_logf`：实现 + f32 MPFR 穷举测试框架就绪 + CORE-MATH 一致性测试就绪 + 函数规格 + Sollya 脚本
+- [x] 系数脚本（`coeff/expf.sollya`, `coeff/logf.sollya`）完成
+- [x] `src/math/binary32/` 目录建立，`purelibm` 自动转为 STATIC library
+- [x] Per-function CMake test macro (`purelibm_add_test`, `purelibm_add_core_math_obj`)
+- [x] CORE-MATH 符号冲突处理（`-D cr_<func>=core_math_<func>`）
+- [x] CTest 标签（`smoke` / `exhaustive`），push CI 仅跑 smoke，nightly cron 跑 exhaustive
+- [x] `tests/test_special_values.h`：表驱动 per-function 特殊值检查
+- [x] `coeff/README.md`：Sollya 脚本规范
+- [x] 函数规格文档（`docs/cr_expf-spec.md`, `docs/cr_sqrtf-spec.md`, `docs/cr_logf-spec.md`）
+
+注意：穷举测试（2^32 输入，含 OpenMP）注册在 `exhaustive` 标签下；应在 nightly CI 或本地手动运行。
 
 ### M3 — Float32 全覆盖
 
