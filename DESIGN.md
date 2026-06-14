@@ -393,14 +393,17 @@ static const double CR_SINF_C1 = 0x1.921fb54442d17p-3;
 - 浮点语义合同、编译 flag、平台假设写入 ADR
 - 单函数规格表模板、oracle 差异记录格式完成
 
-### M1 — 基础设施就绪
+### M1 — 基础设施就绪 ✅ 已完成 (2026-06-14)
 
-- C 项目骨架（目录结构、CMakeLists.txt、CI 配置）
-- IEEE 754 helper 原型无 strict-aliasing UB
-- oracle smoke test 覆盖 signed zero、NaN、Inf、subnormal
-- MPFR oracle 测试框架完成；CORE-MATH 以 git submodule 纳入，一致性测试框架完成
-- 穷举测试 harness 可用
-- `src/utils/` 基础工具（IEEE 754 helper、多项式求值、double-double 算术）
+- [x] C 项目骨架（目录结构、CMakeLists.txt、CI 配置）
+- [x] IEEE 754 helper 原型无 strict-aliasing UB
+- [x] oracle smoke test 覆盖 signed zero、NaN、Inf、subnormal
+- [x] MPFR oracle 测试框架完成；CORE-MATH 以 git submodule 纳入，一致性测试框架完成
+- [x] 穷举测试 harness 可用
+- [x] `src/utils/` 基础工具（IEEE 754 helper、多项式求值、double-double 算术）
+- [x] 严格编译配置：`-std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wdouble-promotion -Wshadow -Werror -fsignaling-nans -fno-fast-math -ffp-contract=off`
+- [x] OpenMP 支持用于穷举测试并行化
+- [x] `docs/translation-notes.md`：CORE-MATH → PureLibm 翻译模式文档
 
 ### M2 — Pilot 函数验证
 
