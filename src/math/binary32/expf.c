@@ -23,6 +23,11 @@
  *   - Muller, "Elementary Functions", 3rd ed., Ch. 8
  *   - Tang, "Table-driven implementation of the exponential function",
  *     ACM TOMS 15(2), 1989
+ *
+ * Note: The LUT+fast/slow path pattern is shared with cr_logf.
+ * When M3 adds more table-driven functions, consider extracting
+ * the common structure (range reduction, LUT indexing, polynomial
+ * evaluation, ub/lb ambiguity check) into a shared helper.
  */
 
 #include "utils/ieee754.h"

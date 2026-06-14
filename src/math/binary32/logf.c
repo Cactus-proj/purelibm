@@ -26,26 +26,18 @@
  *   - Muller, "Elementary Functions", 3rd ed., Ch. 9
  *   - Tang, "Table-driven implementation of the logarithm function",
  *     ACM TOMS 16(4), 1990
+ *
+ * Note: The LUT+fast/slow path pattern is shared with cr_expf.
+ * When M3 adds more table-driven functions, consider extracting
+ * the common structure (range reduction, LUT indexing, polynomial
+ * evaluation, ub/lb ambiguity check) into a shared helper.
  */
 
+#include "utils/bits.h"
 #include "utils/ieee754.h"
 
 #include <math.h>
 #include <stdint.h>
-
-/* Portable count-leading-zeros for 32-bit integers.
- * Used for subnormal normalization. */
-static inline int purelibm_clz32(uint32_t x) {
-    if (x == 0)
-        return 32;
-    int n = 0;
-    if ((x & 0xFFFF0000u) == 0) { n += 16; x <<= 16; }
-    if ((x & 0xFF000000u) == 0) { n += 8;  x <<= 8;  }
-    if ((x & 0xF0000000u) == 0) { n += 4;  x <<= 4;  }
-    if ((x & 0xC0000000u) == 0) { n += 2;  x <<= 2;  }
-    if ((x & 0x80000000u) == 0) { n += 1;             }
-    return n;
-}
 
 float cr_logf(float x) {
     /* LUT: reciprocals tr[j] and log values tl[j] for j = 0..63.
@@ -135,7 +127,11 @@ float cr_logf(float x) {
             /* x < 0: domain error → NaN */
             return purelibm_f32_from_bits(UINT32_C(0x7fc00000));
         }
-        /* Subnormal: normalize by counting leading zeros in mantissa */
+        /* Subnormal: normalize by counting leading zeros in mantissa.
+         * The shift ux <<= n and exponent fixup ux -= n<<23 cannot underflow
+         * for valid f32 subnormals: the largest shift is n=22 (when the
+         * non-zero mantissa bit is in position 1), producing exponent
+         * field 127-22=105 which is well within [1,254]. */
         int n = purelibm_clz32(ux) - 8;
         ux <<= n;
         ux -= (uint32_t)n << 23;
